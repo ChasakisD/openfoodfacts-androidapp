@@ -44,7 +44,7 @@ public class DatabaseHelper extends DaoMaster.OpenHelper {
             case 2:
                 db.execSQL("ALTER TABLE send_product ADD COLUMN 'lang' TEXT NOT NULL DEFAULT 'fr';");
                 break;
-            case 4:
+            case 3:
                 OfflineStoredProductDao.createTable(new StandardDatabase(db), false);
                 break;
         }

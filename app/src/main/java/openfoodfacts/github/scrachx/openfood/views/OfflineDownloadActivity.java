@@ -6,11 +6,14 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -47,12 +50,17 @@ import openfoodfacts.github.scrachx.openfood.fragments.BaseFragment;
 import openfoodfacts.github.scrachx.openfood.models.OfflineStoredProduct;
 import openfoodfacts.github.scrachx.openfood.models.OfflineStoredProductDao;
 import openfoodfacts.github.scrachx.openfood.utils.Utils;
+import pl.aprilapps.easyphotopicker.EasyImage;
+
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+import static openfoodfacts.github.scrachx.openfood.utils.Utils.MY_PERMISSIONS_REQUEST_CAMERA;
 
 
 public class OfflineDownloadActivity extends BaseActivity {
 
     private OfflineStoredProductDao mOfflineStoredProductDao;
-    private static String csv_url = "https://rwkgha-ch3302.files.1drv.com/y4mT1dZsemsubMS6ASuxfAu3qgZUQgdDtX52rzsRxQ2zUuN5YgQVLBv0Oq7w9badwjfbifBrwUCDxZHIXVBAvtbDVXc98GTtgq09rkyr1K-tqJl6Fwm7TNBXIpaFfWdPIw2h8KPrjXpuWcr3bWhUrhpGlnjDX98Y748engKmFXzIu3q6p9qG6CNAmXrrYjBgdWT/products.csv?download&psid=1";
+    private static String csv_url = "https://rwkgha-ch3302.files.1drv.com/y4mBeKUXuUOz81VVBF5GzV8Ark010ivekNLKrZstkovUlQsRPOu52xMgnoH_4VYLuSiXRZJKW56K21QkHaQBRAzP0G9KHf0nl_Bi4A0R6bIbD-LJqHFqC_j3J2mQ1dFyVYtw08laZ54gszi2nrgRfml8IX1eDexI8WRJSiCnlW9o97jBnf3YvEz7Xw5bj-WnGG2/products.csv?download&psid=1";
 
     private String pathToFile;
     private DownloadManager downloadManager = null;
@@ -87,11 +95,11 @@ public class OfflineDownloadActivity extends BaseActivity {
     public void downloadCSV(){
         String selectedCountry = spinner.getSelectedItem().toString();
 
-        List<OfflineStoredProduct> items = mOfflineStoredProductDao.loadAll();
-        for(OfflineStoredProduct item : items)
-            mOfflineStoredProductDao.delete(item);
-
-        downloadProductsData();
+        if (ContextCompat.checkSelfPermission(this, WRITE_EXTERNAL_STORAGE) != PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{WRITE_EXTERNAL_STORAGE}, 1);
+        }else{
+            downloadProductsData();
+        }
 
         /*ScheduledExecutorService scheduleTaskExecutor = Executors.newScheduledThreadPool(1);
 
@@ -139,10 +147,28 @@ public class OfflineDownloadActivity extends BaseActivity {
         }
     };
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case 1:
+                if ((grantResults.length > 0) && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    downloadProductsData();
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
+
     class insertDataToDatabase extends AsyncTask<Void, Void, Void> {
         @Override
         protected Void doInBackground(Void... params) {
             try {
+                List<OfflineStoredProduct> offlineStoredProducts = mOfflineStoredProductDao.loadAll();
+                for(OfflineStoredProduct item : offlineStoredProducts)
+                    mOfflineStoredProductDao.delete(item);
+
                 FileReader fileReader = new FileReader(pathToFile);
                 BufferedReader reader = new BufferedReader(fileReader);
 
@@ -151,8 +177,8 @@ public class OfflineDownloadActivity extends BaseActivity {
                 if (line != null) {
                     line = reader.readLine();
                     while (line != null) {
-                        String[] tokens = new String[10];
                         String[] foundTokens = line.split(",");
+                        String[] tokens = new String[foundTokens.length > 10 ? foundTokens.length : 10];
 
                         for (int i = 0; i < tokens.length; i++)
                             tokens[i] = "";
@@ -162,7 +188,7 @@ public class OfflineDownloadActivity extends BaseActivity {
                                 tokens[i] = foundTokens[i];
                         }
 
-                        OfflineStoredProduct product = new OfflineStoredProduct(tokens[1], tokens[2], tokens[3],
+                        OfflineStoredProduct product = new OfflineStoredProduct(Long.parseLong(tokens[0]), tokens[1], tokens[2], tokens[3],
                                 tokens[4], tokens[5], tokens[6], tokens[7], tokens[8], tokens[9]);
                         mOfflineStoredProductDao.insert(product);
                         line = reader.readLine();
