@@ -366,4 +366,8 @@
     <string name="take_picture_nutrition_table">Take a picture of the nutrition table</string>
     <string name="take_more_pictures">Take more pictures</string>
 
+    <!-- Offline Download -->
+    <string name="offline_title">Download Data for Offline Use</string>
+    <string name="prompt_user">Do you wish to use Open Food Facts even when you are offline? Choose the language of the country that you are interested in, and then press download to get the products related to the selected country stored on your device!</string>
+    <string name="download">Download</string>
 </resources>

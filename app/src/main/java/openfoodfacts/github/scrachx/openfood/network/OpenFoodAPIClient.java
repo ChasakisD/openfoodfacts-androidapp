@@ -22,6 +22,7 @@ import net.steamcrafted.loadtoast.LoadToast;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -39,6 +40,8 @@ import openfoodfacts.github.scrachx.openfood.models.AllergenDao;
 import openfoodfacts.github.scrachx.openfood.models.AllergenRestResponse;
 import openfoodfacts.github.scrachx.openfood.models.HistoryProduct;
 import openfoodfacts.github.scrachx.openfood.models.HistoryProductDao;
+import openfoodfacts.github.scrachx.openfood.models.OfflineStoredProduct;
+import openfoodfacts.github.scrachx.openfood.models.OfflineStoredProductDao;
 import openfoodfacts.github.scrachx.openfood.models.Product;
 import openfoodfacts.github.scrachx.openfood.models.ProductImage;
 import openfoodfacts.github.scrachx.openfood.models.Search;
@@ -64,6 +67,7 @@ public class OpenFoodAPIClient {
 
     private AllergenDao mAllergenDao;
     private HistoryProductDao mHistoryProductDao;
+    private OfflineStoredProductDao mOfflineStoredProductDao;
 
     private static final JacksonConverterFactory jacksonConverterFactory = JacksonConverterFactory.create();
 
@@ -77,6 +81,7 @@ public class OpenFoodAPIClient {
         this(BuildConfig.HOST);
         mAllergenDao = Utils.getAppDaoSession(activity).getAllergenDao();
         mHistoryProductDao = Utils.getAppDaoSession(activity).getHistoryProductDao();
+        mOfflineStoredProductDao = Utils.getAppDaoSession(activity).getOfflineStoredProductDao();
     }
 
     private OpenFoodAPIClient(String apiUrl) {
@@ -236,6 +241,7 @@ public class OpenFoodAPIClient {
 
             @Override
             public void onFailure(Call<State> call, Throwable t) {
+
                 new MaterialDialog.Builder(activity)
                         .title(R.string.txtDialogsTitle)
                         .content(R.string.txtDialogsContent)
@@ -265,9 +271,19 @@ public class OpenFoodAPIClient {
         apiService.searchProductByName(name, page).enqueue(new Callback<Search>() {
             @Override
             public void onResponse(Call<Search> call, Response<Search> response) {
-                if (!response.isSuccess()) {
-                    productsCallback.onProductsResponse(false, null, -1);
-                    return;
+                if (!response.isSuccess()) {String queryAble = "%" + name.trim() + "%";
+                    List<OfflineStoredProduct> offlineStoredProducts = mOfflineStoredProductDao.queryBuilder()
+                            .where(OfflineStoredProductDao.Properties.Product_name.like(queryAble)).list();
+                    if(offlineStoredProducts.size() == 0){
+                        productsCallback.onProductsResponse(false, null, -1);
+                        return;
+                    }else{
+                        List<Product> fixedProducts = new ArrayList<Product>();
+                        for(int i = 0; i < offlineStoredProducts.size(); i++)
+                            fixedProducts.add(new Product(offlineStoredProducts.get(i)));
+
+                        productsCallback.onProductsResponse(true, fixedProducts, fixedProducts.size());
+                    }
                 }
 
                 Search s = response.body();
@@ -281,8 +297,19 @@ public class OpenFoodAPIClient {
 
             @Override
             public void onFailure(Call<Search> call, Throwable t) {
-                Toast.makeText(activity, activity.getString(R.string.errorWeb), Toast.LENGTH_LONG).show();
-                productsCallback.onProductsResponse(false, null, -1);
+                String queryAble = "%" + name.trim() + "%";
+                List<OfflineStoredProduct> offlineStoredProducts = mOfflineStoredProductDao.queryBuilder()
+                        .where(OfflineStoredProductDao.Properties.Product_name.like(queryAble)).list();
+                if(offlineStoredProducts.size() == 0){
+                    Toast.makeText(activity, activity.getString(R.string.errorWeb), Toast.LENGTH_LONG).show();
+                    productsCallback.onProductsResponse(false, null, -1);
+                }else{
+                    List<Product> fixedProducts = new ArrayList<Product>();
+                    for(int i = 0; i < offlineStoredProducts.size(); i++)
+                        fixedProducts.add(new Product(offlineStoredProducts.get(i)));
+
+                    productsCallback.onProductsResponse(true, fixedProducts, fixedProducts.size());
+                }
             }
         });
     }

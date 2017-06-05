@@ -162,6 +162,7 @@ public class MainActivity extends BaseActivity implements CustomTabActivityHelpe
                     new PrimaryDrawerItem().withName(R.string.action_preferences).withIcon(GoogleMaterial.Icon.gmd_settings).withIdentifier(8),
                     new DividerDrawerItem(),
                     new PrimaryDrawerItem().withName(R.string.offline_edit_drawer).withIcon(GoogleMaterial.Icon.gmd_local_airport).withIdentifier(9),
+                    new ProfileDrawerItem().withName("Download Offline Data").withIcon(GoogleMaterial.Icon.gmd_cloud_download).withIdentifier(13),
                     new DividerDrawerItem(),
                     new PrimaryDrawerItem().withName(R.string.action_discover).withIcon(GoogleMaterial.Icon.gmd_info).withIdentifier(ABOUT),
                     new PrimaryDrawerItem().withName(R.string.contribute).withIcon(R.drawable.ic_group_grey_24dp).withIdentifier(CONTRIBUTE),
@@ -235,6 +236,9 @@ public class MainActivity extends BaseActivity implements CustomTabActivityHelpe
                                     startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + BuildConfig.OFOTHERLINKAPP)));
                                 }
                             }
+                            break;
+                        case 13:
+                            startActivity(new Intent(MainActivity.this, OfflineDownloadActivity.class));
                             break;
                         case CONTRIBUTOR:
                             SharedPreferences preferences1 = getSharedPreferences("login", 0);

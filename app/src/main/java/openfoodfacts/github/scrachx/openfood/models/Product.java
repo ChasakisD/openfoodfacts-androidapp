@@ -84,6 +84,18 @@ public class Product implements Serializable {
     @JsonProperty("image_url")
     private String imageUrl;
 
+    public Product(OfflineStoredProduct offlineProduct){
+        this.code = offlineProduct.getCode();
+        this.productName = offlineProduct.getProduct_name();
+        this.genericName = offlineProduct.getGeneric_name();
+        this.quantity = offlineProduct.getQuantity();
+        this.brands = offlineProduct.getBrands();
+        this.ingredientsText = offlineProduct.getIngredients_text();
+        this.allergens = offlineProduct.getAllergens();
+        this.traces = offlineProduct.getTraces();
+        this.nutritionGradeFr = offlineProduct.getNutrition_grade_fr();
+    }
+
     public String getLastModifiedBy() {
         return lastModifiedBy;
     }
